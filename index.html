@@ -129,6 +129,7 @@
         const app = initializeApp(firebaseConfig);
         const db = getFirestore(app);
 
+        // DOM Element references
         const mainContainer = document.getElementById('main-container');
         const featuredArticleContainer = document.getElementById('featured-article');
         const secondaryArticlesContainer = document.getElementById('secondary-articles');
@@ -156,13 +157,13 @@
         const uiStrings = {
             en: { archives: "Archives", readableFont: "Readable Font", originalFont: "Original Font", published: "Published", nextEdition: "Next Edition", loading: "The owls are on their way with the latest edition... This may take a minute or two.", horoscopes: "Wizarding Horoscopes ✨", horoscopeComingSoon: "Coming in a future edition!", regenerateImage: "Regenerate Image", generating: "Generating..." },
             hu: { archives: "Archívum", readableFont: "Olvasható Betűtípus", originalFont: "Eredeti Betűtípus", published: "Publikálva", nextEdition: "Következő kiadás", loading: "A baglyok úton vannak a legfrissebb hírekkel... Ez 1-2 percet is igénybe vehet.", horoscopes: "Varázsló Horoszkóp ✨", horoscopeComingSoon: "Egy következő kiadásban érkezik!", regenerateImage: "Kép Újragenerálása", generating: "Generálás..." },
-            // ... other languages
+            // ... other languages omitted for brevity
         };
         const languageNames = { en: 'English', hu: 'Hungarian', de: 'German', es: 'Spanish', fr: 'French', it: 'Italian' };
         
         function showLoading(isLoading, isGenerating = false) {
              if (isLoading) {
-                loadingText.textContent = isGenerating ? uiStrings[currentLanguage].loading : '';
+                loadingText.textContent = isGenerating ? uiStrings[currentLanguage]?.loading : '';
                 loadingOverlay.style.display = 'flex';
             } else {
                 loadingOverlay.style.display = 'none';
@@ -207,10 +208,9 @@
             showLoading(true, true);
             const editionJSON = await fetchFromNetlify('generate-edition', { lang: 'en' });
             
-            // FIX: Check if the generated edition is valid before saving
             if (!editionJSON || !editionJSON.mainArticle || !editionJSON.secondaryArticles) {
                 console.error("Failed to generate a valid master edition.");
-                return null; // Return null to indicate failure
+                return null;
             }
 
             const masterEdition = {
@@ -218,6 +218,7 @@
                 publicationDate: new Date().toISOString()
             };
 
+            // FIX: Only save if the generation was successful.
             await setDoc(docRef, masterEdition);
             return masterEdition;
         }
@@ -237,9 +238,10 @@
             console.log(`No translation for ${lang}. Generating...`);
             showLoading(true, true);
             const translatedJSON = await fetchFromNetlify('generate-edition', { lang, articles: masterArticles });
-            if (!translatedJSON || !translatedJSON.mainArticle) return masterArticles; // Fallback to English
+            if (!translatedJSON || !translatedJSON.mainArticle) return masterArticles;
 
             const translatedArticles = [translatedJSON.mainArticle, ...translatedJSON.secondaryArticles];
+            // FIX: Only save if the translation was successful.
             await setDoc(translationRef, { articles: translatedArticles });
             
             return translatedArticles;
@@ -282,7 +284,6 @@
             clearContainers();
             currentEdition = editionData;
             
-            // FIX: Check if articles exist and have content before populating
             if (!editionData || !Array.isArray(editionData.articles) || editionData.articles.length === 0) {
                  featuredArticleContainer.innerHTML = `<p class="text-center text-yellow-400 p-8">Could not load today's edition. The copy may have been bewitched.</p>`;
                  return;
@@ -324,7 +325,8 @@
         }
 
         function createFullArticleHTML(article, index) {
-            const bodyHtml = (article.body && typeof article.body === 'string') ? article.body.replace(/\n/g, '<br><br>') : 'Article content is unavailable.';
+            // FIX: Added a check for article.body before calling .replace()
+            const bodyHtml = (article && article.body && typeof article.body === 'string') ? article.body.replace(/\n/g, '<br><br>') : 'Article content is unavailable.';
             return `<div class="main-article-grid">
                     <div class="article-content">
                         <h2 class="featured-headline title-font">${article.headline || 'Untitled'}</h2><p class="byline">${article.byline || ''}</p>
