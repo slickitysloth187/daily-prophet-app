@@ -9,6 +9,7 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Uncial+Antiqua&family=Lancelot&family=IM+Fell+English+SC&family=Merriweather:ital,wght@0,400;0,700;1,400&display=swap" rel="stylesheet">
     <style>
+        /* Base styles */
         body { background-color: #1a1a1a; background-image: url('https://www.transparenttextures.com/patterns/dark-leather.png'); font-family: 'IM Fell English SC', serif; color: #c5b8a5; }
         .newspaper-container { max-width: 1400px; margin: auto; padding: 1.5rem; background-color: #1e1b18; background-image: url('https://www.transparenttextures.com/patterns/old-paper.png'); box-shadow: 0 0 40px rgba(0,0,0,0.8); border: 10px solid transparent; border-image: url("data:image/svg+xml,%3csvg width='100' height='100' xmlns='http://www.w3.org/2000/svg'%3e%3cline x1='0' y1='0' x2='100' y2='100' style='stroke:%234a3f35;stroke-width:4px;'/%3e%3cline x1='100' y1='0' x2='0' y2='100' style='stroke:%234a3f35;stroke-width:4px;'/%3e%3c/svg%3e") 30 round; }
         .header { text-align: center; padding-bottom: 1rem; margin-bottom: 1rem; border-bottom: 6px double #4a3f35; }
@@ -112,11 +113,9 @@
     </div>
 
     <script type="module">
-        // Import Firebase modules
         import { initializeApp } from "https://www.gstatic.com/firebasejs/9.17.1/firebase-app.js";
         import { getFirestore, doc, getDoc, setDoc } from "https://www.gstatic.com/firebasejs/9.17.1/firebase-firestore.js";
 
-        // IMPORTANT: Replace with your actual Firebase configuration
         const firebaseConfig = {
             apiKey: "AIzaSyA_pCJMsQTSxBBGoZ7Q8CI8D7rHi2Uo_7Q",
             authDomain: "dailyprophet-5b73e.firebaseapp.com",
@@ -127,11 +126,9 @@
             measurementId: "G-LDLKX4F9Q6"
         };
 
-        // Initialize Firebase
         const app = initializeApp(firebaseConfig);
         const db = getFirestore(app);
 
-        // All other variables and functions remain here...
         const mainContainer = document.getElementById('main-container');
         const featuredArticleContainer = document.getElementById('featured-article');
         const secondaryArticlesContainer = document.getElementById('secondary-articles');
@@ -154,14 +151,11 @@
         let currentLanguage = 'en';
 
         const uiStrings = {
-            en: { archives: "Archives", readableFont: "Readable Font", originalFont: "Original Font", published: "Published", nextEdition: "Next Edition", loading: "The owls are on their way with the latest edition... This may take a minute or two.", horoscopes: "Wizarding Horoscopes ✨", horoscopeComingSoon: "Coming in a future edition!", regenerateImage: "Regenerate Image", generating: "Generating..." },
-            hu: { archives: "Archívum", readableFont: "Olvasható Betűtípus", originalFont: "Eredeti Betűtípus", published: "Publikálva", nextEdition: "Következő kiadás", loading: "A baglyok úton vannak a legfrissebb hírekkel... Ez 1-2 percet is igénybe vehet.", horoscopes: "Varázsló Horoszkóp ✨", horoscopeComingSoon: "Egy következő kiadásban érkezik!", regenerateImage: "Kép Újragenerálása", generating: "Generálás..." },
-            de: { archives: "Archive", readableFont: "Lesbare Schrift", originalFont: "Originale Schriftart", published: "Veröffentlicht", nextEdition: "Nächste Ausgabe", loading: "Die Eulen sind mit der neuesten Ausgabe unterwegs...", horoscopes: "Zauberer-Horoskope ✨", horoscopeComingSoon: "Kommt in einer zukünftigen Ausgabe!", regenerateImage: "Bild neu generieren", generating: "Generiere..." },
-            es: { archives: "Archivos", readableFont: "Fuente Legible", originalFont: "Fuente Original", published: "Publicado", nextEdition: "Próxima Edición", loading: "Las lechuzas están en camino con la última edición...", horoscopes: "Horóscopos Mágicos ✨", horoscopeComingSoon: "¡Próximamente en una futura edición!", regenerateImage: "Regenerar Imagen", generating: "Generando..." },
-            fr: { archives: "Archives", readableFont: "Police Lisible", originalFont: "Police Originale", published: "Publié", nextEdition: "Prochaine Édition", loading: "Les hiboux sont en route avec la dernière édition...", horoscopes: "Horoscopes des Sorciers ✨", horoscopeComingSoon: "À venir dans une prochaine édition !", regenerateImage: "Régénérer l'image", generating: "Génération..." },
-            it: { archives: "Archivi", readableFont: "Carattere Leggibile", originalFont: "Carattere Originale", published: "Pubblicato", nextEdition: "Prossima Edizione", loading: "I gufi sono in viaggio con l'ultima edizione...", horoscopes: "Oroscopi dei Maghi ✨", horoscopeComingSoon: "In arrivo in una prossima edizione!", regenerateImage: "Rigenera Immagine", generating: "Generazione..." }
+            en: { archives: "Archives", readableFont: "Readable Font", originalFont: "Original Font", published: "Published", nextEdition: "Next Edition", loading: "The owls are on their way with the latest edition... This may take a minute or two.", horoscopes: "Wizarding Horoscopes ✨", horoscopeComingSoon: "Coming in the next version!", regenerateImage: "Regenerate Image", generating: "Generating..." },
+            hu: { archives: "Archívum", readableFont: "Olvasható Betűtípus", originalFont: "Eredeti Betűtípus", published: "Publikálva", nextEdition: "Következő kiadás", loading: "A baglyok úton vannak a legfrissebb hírekkel... Ez 1-2 percet is igénybe vehet.", horoscopes: "Varázsló Horoszkóp ✨", horoscopeComingSoon: "A következő kiadásban érkezik!", regenerateImage: "Kép Újragenerálása", generating: "Generálás..." },
         };
-
+        const languageNames = { en: 'English', hu: 'Hungarian', de: 'German', es: 'Spanish', fr: 'French', it: 'Italian' };
+        
         const getDailyDocId = (date = new Date()) => {
             const cacheDate = new Date(date);
             if (cacheDate.getUTCHours() < 8) { cacheDate.setUTCDate(cacheDate.getUTCDate() - 1); }
@@ -209,9 +203,9 @@
             await setDoc(docRef, masterEdition);
             return masterEdition;
         }
-        
-        async function getTranslatedEdition(masterEdition, lang) {
-             if (lang === 'en') return masterEdition.articles;
+
+        async function getTranslatedArticles(masterArticles, lang) {
+            if (lang === 'en') return masterArticles;
 
             const docId = getDailyDocId();
             const translationRef = doc(db, `prophet_editions/${docId}/translations`, lang);
@@ -224,15 +218,14 @@
             
             console.log(`No translation for ${lang}. Generating...`);
             showLoading(true, true);
-            const translatedJSON = await fetchFromNetlify('generate-edition', { lang: lang, articles: masterEdition.articles });
-            if (!translatedJSON) return masterEdition.articles; // Fallback to English
+            const translatedJSON = await fetchFromNetlify('generate-edition', { lang, articles: masterArticles });
+            if (!translatedJSON) return masterArticles;
 
             const translatedArticles = [translatedJSON.mainArticle, ...translatedJSON.secondaryArticles];
             await setDoc(translationRef, { articles: translatedArticles });
             
             return translatedArticles;
         }
-
 
         async function initializePage() {
             currentLanguage = localStorage.getItem('prophetLanguage') || 'en';
@@ -249,8 +242,8 @@
                 return;
             }
             
-            const translatedArticles = await getTranslatedEdition(masterEdition, currentLanguage);
-            const articlesWithImages = await hydrateEditionWithImages(translatedArticles);
+            const translatedArticles = await getTranslatedArticles(masterEdition.articles, currentLanguage);
+            const articlesWithImages = await hydrateEditionWithImages(translatedArticles, masterEdition.articles);
 
             const finalEdition = {
                 articles: articlesWithImages,
@@ -258,24 +251,22 @@
             };
             
             populatePage(finalEdition);
-            // We don't need archive rendering logic as Firebase is the source of truth
             showLoading(false);
         }
 
-        async function hydrateEditionWithImages(articles) {
-            const imagePromises = articles.map(article => fetchFromNetlify('generate-image', { headline: article.headline }));
+        async function hydrateEditionWithImages(articlesToDisplay, masterArticles) {
+            const imagePromises = masterArticles.map(article => fetchFromNetlify('generate-image', { headline: article.headline }));
             const imageSettledPromises = await Promise.allSettled(imagePromises);
             
-            const hydratedArticles = articles.map((article, index) => {
+            return articlesToDisplay.map((article, index) => {
                 const result = imageSettledPromises[index];
                 return {
                     ...article,
                     imageUrl: (result.status === 'fulfilled' && result.value) ? result.value.imageUrl : null
                 };
             });
-            return hydratedArticles;
         }
-
+        
         function updateUIText(lang) {
             const strings = uiStrings[lang];
             archiveTitle.textContent = strings.archives;
@@ -310,15 +301,6 @@
             if(featured) featuredArticleContainer.innerHTML = createFullArticleHTML(featured, 0);
             if(others.length > 0) secondaryArticlesContainer.innerHTML = others.map((article, index) => createSecondaryArticleHTML(article, index + 1)).join('');
         }
-
-        function showLoading(isLoading, isGenerating = false) {
-             if (isLoading) {
-                loadingText.textContent = isGenerating ? uiStrings[currentLanguage].loading : '';
-                loadingOverlay.style.display = 'flex';
-            } else {
-                loadingOverlay.style.display = 'none';
-            }
-        }
         
         function clearContainers(){
             featuredArticleContainer.innerHTML = '';
@@ -336,14 +318,17 @@
         }
 
         function createSecondaryArticleHTML(article, index) {
+            // FIX: Ensure article.body is a string before calling substring.
+            const bodySummary = (article.body && typeof article.body === 'string') ? article.body.substring(0,100) : '';
             return `<div class="secondary-card cursor-pointer" data-article-index="${index}">
                     <div class="article-image-container mb-4 h-48 w-full">${createImageHTML(article, index)}</div>
                     <h3 class="title-font">${article.headline}</h3><p class="byline">${article.byline}</p>
-                    <div class="article-body article-font"><p>${article.body.substring(0,100)}...</p></div></div>`;
+                    <div class="article-body article-font"><p>${bodySummary}...</p></div></div>`;
         }
 
         function createFullArticleHTML(article, index) {
-            const bodyHtml = article.body.replace(/\n/g, '<br><br>');
+             // FIX: Ensure article.body is a string before calling replace.
+            const bodyHtml = (article.body && typeof article.body === 'string') ? article.body.replace(/\n/g, '<br><br>') : 'Article content is unavailable.';
             return `<div class="main-article-grid">
                     <div class="article-content">
                         <h2 class="featured-headline title-font">${article.headline}</h2><p class="byline">${article.byline}</p>
@@ -352,19 +337,13 @@
         }
 
         // --- Event Listeners ---
-        fontSwitcherButton.addEventListener('click', () => {
-            bodyElement.classList.toggle('readable-font');
-            const isReadable = bodyElement.classList.contains('readable-font');
-            fontSwitcherText.textContent = isReadable ? uiStrings[currentLanguage].originalFont : uiStrings[currentLanguage].readableFont;
-        });
-        
         languageSelector.addEventListener('change', async (e) => {
             currentLanguage = e.target.value;
             localStorage.setItem('prophetLanguage', currentLanguage);
             showLoading(true, false);
-            const masterEdition = await getMasterEdition(); // Re-fetch master to be sure
-            const translatedArticles = await getTranslatedEdition(masterEdition, currentLanguage);
-            const articlesWithImages = await hydrateEditionWithImages(translatedArticles);
+            const masterEdition = await getMasterEdition();
+            const translatedArticles = await getTranslatedArticles(masterEdition.articles, currentLanguage);
+            const articlesWithImages = await hydrateEditionWithImages(translatedArticles, masterEdition.articles);
             const finalEdition = {
                 articles: articlesWithImages,
                 publicationDate: masterEdition.publicationDate,
@@ -372,25 +351,25 @@
             populatePage(finalEdition);
             showLoading(false);
         });
-
-        modalCloseButton.addEventListener('click', () => { modal.style.display = 'none'; });
-        modal.addEventListener('click', (e) => { if (e.target === modal) { modal.style.display = 'none'; } });
-
+        
         mainContainer.addEventListener('click', async (e) => {
             const regenBtn = e.target.closest('.regenerate-image-btn');
             if (regenBtn) {
                 e.stopPropagation(); 
                 const container = regenBtn.closest('[data-article-index]');
                 const articleIndex = parseInt(container.dataset.articleIndex, 10);
-                const article = currentEdition.articles[articleIndex];
+                
+                const masterArticle = (await getMasterEdition()).articles[articleIndex];
+
+                if (!masterArticle) return;
                 
                 regenBtn.textContent = uiStrings[currentLanguage].generating;
                 regenBtn.disabled = true;
 
-                const result = await fetchFromNetlify('generate-image', { headline: article.headline });
+                const result = await fetchFromNetlify('generate-image', { headline: masterArticle.headline });
                 if (result && result.imageUrl) {
                     currentEdition.articles[articleIndex].imageUrl = result.imageUrl;
-                    container.innerHTML = `<img src="${result.imageUrl}" alt="${article.headline}" class="article-image">`;
+                    container.innerHTML = `<img src="${result.imageUrl}" alt="${currentEdition.articles[articleIndex].headline}" class="article-image">`;
                 } else {
                     regenBtn.textContent = uiStrings[currentLanguage].regenerateImage;
                     regenBtn.disabled = false;
