@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>The Daily Prophet</title>
+    <title>The Daily Prophet - Professional Edition</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -130,6 +130,7 @@
         const app = initializeApp(firebaseConfig);
         const db = getFirestore(app);
 
+        // All other variables and functions remain here...
         const mainContainer = document.getElementById('main-container');
         const featuredArticleContainer = document.getElementById('featured-article');
         const secondaryArticlesContainer = document.getElementById('secondary-articles');
@@ -147,14 +148,13 @@
         const languageSelector = document.getElementById('language-selector');
         const horoscopeTitle = document.getElementById('horoscope-title');
         const horoscopeComingSoon = document.getElementById('horoscope-coming-soon');
-        
-        let masterEditionWithImages = null; 
         let currentEdition = {};
         let currentLanguage = 'en';
 
         const uiStrings = {
-            en: { archives: "Archives", readableFont: "Readable Font", originalFont: "Original Font", published: "Published", nextEdition: "Next Edition", loading: "The owls are on their way with the latest edition... This may take a minute or two.", horoscopes: "Wizarding Horoscopes ✨", horoscopeComingSoon: "Coming in a next update!", regenerateImage: "Regenerate Image", generating: "Generating...", billingError: "Image generation requires a billed account." },
+            en: { archives: "Archives", readableFont: "Readable Font", originalFont: "Original Font", published: "Published", nextEdition: "Next Edition", loading: "The owls are on their way with the latest edition... This may take a minute or two.", horoscopes: "Wizarding Horoscopes ✨", horoscopeComingSoon: "Coming in a future edition!", regenerateImage: "Regenerate Image", generating: "Generating...", billingError: "Image generation requires a billed account." },
             hu: { archives: "Archívum", readableFont: "Olvasható Betűtípus", originalFont: "Eredeti Betűtípus", published: "Publikálva", nextEdition: "Következő kiadás", loading: "A baglyok úton vannak a legfrissebb hírekkel... Ez 1-2 percet is igénybe vehet.", horoscopes: "Varázsló Horoszkóp ✨", horoscopeComingSoon: "Egy következő kiadásban érkezik!", regenerateImage: "Kép Újragenerálása", generating: "Generálás..." },
+            // ... other languages omitted for brevity
         };
         const languageNames = { en: 'English', hu: 'Hungarian', de: 'German', es: 'Spanish', fr: 'French', it: 'Italian' };
         
@@ -357,6 +357,7 @@
             if(showLoader) showLoading(false);
         }
 
+        // --- MAIN INITIALIZATION FUNCTION ---
         async function initializePage() {
             currentLanguage = localStorage.getItem('prophetLanguage') || 'en';
             languageSelector.value = currentLanguage;
@@ -384,7 +385,7 @@
             showLoading(false);
         }
 
-        // --- Event Listeners ---
+        // --- EVENT LISTENERS ---
         languageSelector.addEventListener('change', (e) => {
             handleLanguageChange(e.target.value);
         });

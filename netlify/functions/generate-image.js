@@ -1,5 +1,4 @@
 // netlify/functions/generate-image.js
-// Ez a verzió nem igényel külső könyvtárakat ('npm install').
 
 exports.handler = async function(event) {
     if (event.httpMethod !== 'POST') {
@@ -9,13 +8,12 @@ exports.handler = async function(event) {
     try {
         const { headline } = JSON.parse(event.body);
         if (!headline) {
-            return { statusCode: 400, body: 'Headline is required' };
+            return { statusCode: 400, body: JSON.stringify({ error: 'Headline is required' }) };
         }
 
         const apiKey = process.env.GEMINI_API_KEY;
         const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/imagen-3.0-generate-002:predict?key=${apiKey}`;
         
-        // Biztonsági okokból eltávolítjuk az esetleges idézőjeleket a főcímből
         const sanitizedHeadline = headline.replace(/"/g, '');
         const imagePrompt = `A black and white, vintage newspaper photograph from a magical world: ${sanitizedHeadline}`;
         
@@ -30,13 +28,12 @@ exports.handler = async function(event) {
             body: JSON.stringify(payload)
         });
 
-        if (!response.ok) {
-            const errorText = await response.text();
-            console.error('Image Generation API Error:', errorText);
-            return { statusCode: response.status, body: JSON.stringify({ error: "Image generation failed", details: errorText }) };
-        }
-
         const data = await response.json();
+
+        if (!response.ok) {
+            console.error('Image Generation API Error:', data);
+            return { statusCode: response.status, body: JSON.stringify({ error: "Image generation failed", details: data }) };
+        }
         
         if (!data.predictions || data.predictions.length === 0 || !data.predictions[0].bytesBase64Encoded) {
              return { statusCode: 500, body: JSON.stringify({ error: 'No image data in API response' }) };

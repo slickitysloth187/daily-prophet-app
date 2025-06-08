@@ -6,15 +6,22 @@ exports.handler = async function(event) {
     }
 
     try {
-        const { lang } = JSON.parse(event.body);
+        const { lang, articles } = JSON.parse(event.body);
         const apiKey = process.env.GEMINI_API_KEY;
         const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent?key=${apiKey}`;
         
         const languageNames = { en: 'English', hu: 'Hungarian', de: 'German', es: 'Spanish', fr: 'French', it: 'Italian' };
         const languageName = languageNames[lang] || 'English';
 
-        // FIX: Updated prompt to generate original, post-book content.
-        const prompt = `Generate a full front page for the Daily Prophet newspaper in ${languageName}. The events must take place several years after the main Harry Potter books (e.g., in the 2020s) and must be completely original, not retelling stories from the books or films. Respond with ONLY a single valid JSON object. The JSON object must contain a 'mainArticle' (with 'headline', 'byline', and a full multi-paragraph 'body') and an array of two 'secondaryArticles' (each with 'headline', 'byline', and a one-paragraph 'body').`;
+        let prompt;
+        if (articles) {
+            // Translation request
+            const textOnlyPayload = { mainArticle: articles[0], secondaryArticles: articles.slice(1) };
+            prompt = `Translate the following JSON object containing news articles into ${languageName}. Keep the exact JSON structure. Translate the 'headline', 'byline', and 'body' for each article. Original articles: ${JSON.stringify(textOnlyPayload)}`;
+        } else {
+            // Generation request for post-book events
+            prompt = `Generate a full front page for the Daily Prophet newspaper in ${languageName}. The events must take place several years after the main Harry Potter books (e.g., in the 2020s) and must be completely original, not retelling stories from the books or films. Respond with ONLY a single valid JSON object. The JSON object must contain a 'mainArticle' (with 'headline', 'byline', and a full multi-paragraph 'body') and an array of two 'secondaryArticles' (each with 'headline', 'byline', and a one-paragraph 'body').`;
+        }
         
         const payload = {
             contents: [{ role: "user", parts: [{ text: prompt }] }],
