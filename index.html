@@ -116,11 +116,12 @@
         import { initializeApp } from "https://www.gstatic.com/firebasejs/9.17.1/firebase-app.js";
         import { getFirestore, doc, getDoc, setDoc } from "https://www.gstatic.com/firebasejs/9.17.1/firebase-firestore.js";
 
+        // FIX: Inserted the user's provided Firebase configuration
         const firebaseConfig = {
             apiKey: "AIzaSyA_pCJMsQTSxBBGoZ7Q8CI8D7rHi2Uo_7Q",
             authDomain: "dailyprophet-5b73e.firebaseapp.com",
             projectId: "dailyprophet-5b73e",
-            storageBucket: "dailyprophet-5b73e.firebasestorage.app",
+            storageBucket: "dailyprophet-5b73e.appspot.com",
             messagingSenderId: "431177114519",
             appId: "1:431177114519:web:1f54c7cab43da059e81ad2",
             measurementId: "G-LDLKX4F9Q6"
@@ -129,6 +130,7 @@
         const app = initializeApp(firebaseConfig);
         const db = getFirestore(app);
 
+        // DOM Element references
         const mainContainer = document.getElementById('main-container');
         const featuredArticleContainer = document.getElementById('featured-article');
         const secondaryArticlesContainer = document.getElementById('secondary-articles');
@@ -147,19 +149,42 @@
         const languageSelector = document.getElementById('language-selector');
         const horoscopeTitle = document.getElementById('horoscope-title');
         const horoscopeComingSoon = document.getElementById('horoscope-coming-soon');
+        
+        // State variables
+        const ARCHIVE_INDEX_KEY = 'dailyProphetArchiveIndex';
+        let masterEditionWithImages = null; 
         let currentEdition = {};
         let currentLanguage = 'en';
 
         const uiStrings = {
-            en: { archives: "Archives", readableFont: "Readable Font", originalFont: "Original Font", published: "Published", nextEdition: "Next Edition", loading: "The owls are on their way with the latest edition... This may take a minute or two.", horoscopes: "Wizarding Horoscopes ✨", horoscopeComingSoon: "Coming in the next version!", regenerateImage: "Regenerate Image", generating: "Generating..." },
-            hu: { archives: "Archívum", readableFont: "Olvasható Betűtípus", originalFont: "Eredeti Betűtípus", published: "Publikálva", nextEdition: "Következő kiadás", loading: "A baglyok úton vannak a legfrissebb hírekkel... Ez 1-2 percet is igénybe vehet.", horoscopes: "Varázsló Horoszkóp ✨", horoscopeComingSoon: "A következő kiadásban érkezik!", regenerateImage: "Kép Újragenerálása", generating: "Generálás..." },
+            en: { archives: "Archives", readableFont: "Readable Font", originalFont: "Original Font", published: "Published", nextEdition: "Next Edition", loading: "The owls are on their way with the latest edition... This may take a minute or two.", horoscopes: "Wizarding Horoscopes ✨", horoscopeComingSoon: "Coming in a future edition!", regenerateImage: "Regenerate Image", generating: "Generating..." },
+            hu: { archives: "Archívum", readableFont: "Olvasható Betűtípus", originalFont: "Eredeti Betűtípus", published: "Publikálva", nextEdition: "Következő kiadás", loading: "A baglyok úton vannak a legfrissebb hírekkel... Ez 1-2 percet is igénybe vehet.", horoscopes: "Varázsló Horoszkóp ✨", horoscopeComingSoon: "Egy következő kiadásban érkezik!", regenerateImage: "Kép Újragenerálása", generating: "Generálás..." },
+            de: { archives: "Archive", readableFont: "Lesbare Schrift", originalFont: "Originale Schriftart", published: "Veröffentlicht", nextEdition: "Nächste Ausgabe", loading: "Die Eulen sind mit der neuesten Ausgabe unterwegs...", horoscopes: "Zauberer-Horoskope ✨", horoscopeComingSoon: "Kommt in einer zukünftigen Ausgabe!", regenerateImage: "Bild neu generieren", generating: "Generiere..." },
+            es: { archives: "Archivos", readableFont: "Fuente Legible", originalFont: "Fuente Original", published: "Publicado", nextEdition: "Próxima Edición", loading: "Las lechuzas están en camino con la última edición...", horoscopes: "Horóscopos Mágicos ✨", horoscopeComingSoon: "¡Próximamente en una futura edición!", regenerateImage: "Regenerar Imagen", generating: "Generando..." },
+            fr: { archives: "Archives", readableFont: "Police Lisible", originalFont: "Police Originale", published: "Publié", nextEdition: "Prochaine Édition", loading: "Les hiboux sont en route avec la dernière édition...", horoscopes: "Horoscopes des Sorciers ✨", horoscopeComingSoon: "À venir dans une prochaine édition !", regenerateImage: "Régénérer l'image", generating: "Génération..." },
+            it: { archives: "Archivi", readableFont: "Carattere Leggibile", originalFont: "Carattere Originale", published: "Pubblicato", nextEdition: "Prossima Edizione", loading: "I gufi sono in viaggio con l'ultima edizione...", horoscopes: "Oroscopi dei Maghi ✨", horoscopeComingSoon: "In arrivo in una prossima edizione!", regenerateImage: "Rigenera Immagine", generating: "Generazione..." }
         };
         const languageNames = { en: 'English', hu: 'Hungarian', de: 'German', es: 'Spanish', fr: 'French', it: 'Italian' };
         
+        // --- FUNCTION DECLARATIONS ---
+        
+        function showLoading(isLoading, isGenerating = false) {
+             if (isLoading) {
+                loadingText.textContent = isGenerating ? uiStrings[currentLanguage].loading : '';
+                loadingOverlay.style.display = 'flex';
+            } else {
+                loadingOverlay.style.display = 'none';
+            }
+        }
+
         const getDailyDocId = (date = new Date()) => {
             const cacheDate = new Date(date);
             if (cacheDate.getUTCHours() < 8) { cacheDate.setUTCDate(cacheDate.getUTCDate() - 1); }
             return `edition-${cacheDate.getUTCFullYear()}-${cacheDate.getUTCMonth() + 1}-${cacheDate.getUTCDate()}`;
+        };
+
+        const getTranslationCacheKey = (lang, contentKey) => {
+            return `translation-${lang}-${contentKey}`;
         };
 
         async function fetchFromNetlify(functionName, payload) {
@@ -227,33 +252,6 @@
             return translatedArticles;
         }
 
-        async function initializePage() {
-            currentLanguage = localStorage.getItem('prophetLanguage') || 'en';
-            languageSelector.value = currentLanguage;
-            updateUIText(currentLanguage);
-            showLoading(true, false);
-            
-            const masterEdition = await getMasterEdition();
-            
-            if (!masterEdition) {
-                featuredArticleContainer.innerHTML = `<p class="text-center text-yellow-400 p-8">The owls returned with empty talons. Please check back later.</p>`;
-                secondaryArticlesContainer.innerHTML = '';
-                showLoading(false);
-                return;
-            }
-            
-            const translatedArticles = await getTranslatedArticles(masterEdition.articles, currentLanguage);
-            const articlesWithImages = await hydrateEditionWithImages(translatedArticles, masterEdition.articles);
-
-            const finalEdition = {
-                articles: articlesWithImages,
-                publicationDate: masterEdition.publicationDate
-            };
-            
-            populatePage(finalEdition);
-            showLoading(false);
-        }
-
         async function hydrateEditionWithImages(articlesToDisplay, masterArticles) {
             const imagePromises = masterArticles.map(article => fetchFromNetlify('generate-image', { headline: article.headline }));
             const imageSettledPromises = await Promise.allSettled(imagePromises);
@@ -318,7 +316,6 @@
         }
 
         function createSecondaryArticleHTML(article, index) {
-            // FIX: Ensure article.body is a string before calling substring.
             const bodySummary = (article.body && typeof article.body === 'string') ? article.body.substring(0,100) : '';
             return `<div class="secondary-card cursor-pointer" data-article-index="${index}">
                     <div class="article-image-container mb-4 h-48 w-full">${createImageHTML(article, index)}</div>
@@ -327,7 +324,6 @@
         }
 
         function createFullArticleHTML(article, index) {
-             // FIX: Ensure article.body is a string before calling replace.
             const bodyHtml = (article.body && typeof article.body === 'string') ? article.body.replace(/\n/g, '<br><br>') : 'Article content is unavailable.';
             return `<div class="main-article-grid">
                     <div class="article-content">
@@ -336,22 +332,69 @@
                     <div class="article-image-container" data-article-index="${index}">${createImageHTML(article, index)}</div></div>`;
         }
 
-        // --- Event Listeners ---
-        languageSelector.addEventListener('change', async (e) => {
-            currentLanguage = e.target.value;
-            localStorage.setItem('prophetLanguage', currentLanguage);
-            showLoading(true, false);
-            const masterEdition = await getMasterEdition();
+        async function handleLanguageChange(lang, showLoader = true) {
+            if(showLoader) showLoading(true, false);
+            currentLanguage = lang;
+            localStorage.setItem('prophetLanguage', lang);
+            updateUIText(lang);
+
+            const masterEdition = await getMasterEdition(); // This gets text only from cache or generation
+            
             const translatedArticles = await getTranslatedArticles(masterEdition.articles, currentLanguage);
             const articlesWithImages = await hydrateEditionWithImages(translatedArticles, masterEdition.articles);
+            
             const finalEdition = {
                 articles: articlesWithImages,
                 publicationDate: masterEdition.publicationDate,
             };
+
             populatePage(finalEdition);
+            if(showLoader) showLoading(false);
+        }
+
+        // --- MAIN INITIALIZATION FUNCTION ---
+        async function initializePage() {
+            currentLanguage = localStorage.getItem('prophetLanguage') || 'en';
+            languageSelector.value = currentLanguage;
+            updateUIText(currentLanguage);
+            showLoading(true, false);
+            
+            const masterEdition = await getMasterEdition();
+            
+            if (!masterEdition) {
+                featuredArticleContainer.innerHTML = `<p class="text-center text-yellow-400 p-8">The owls returned with empty talons. Please check back later.</p>`;
+                secondaryArticlesContainer.innerHTML = '';
+                showLoading(false);
+                return;
+            }
+            
+            const translatedArticles = await getTranslatedArticles(masterEdition.articles, currentLanguage);
+            const articlesWithImages = await hydrateEditionWithImages(translatedArticles, masterEdition.articles);
+
+            const finalEdition = {
+                articles: articlesWithImages,
+                publicationDate: masterEdition.publicationDate
+            };
+            
+            populatePage(finalEdition);
+            // Archive is not rendered as it's not part of the current logic
             showLoading(false);
+        }
+
+        // --- EVENT LISTENERS ---
+        languageSelector.addEventListener('change', (e) => {
+            handleLanguageChange(e.target.value);
         });
         
+        fontSwitcherButton.addEventListener('click', () => {
+            bodyElement.classList.toggle('readable-font');
+            const isReadable = bodyElement.classList.contains('readable-font');
+            fontSwitcherText.textContent = isReadable ? uiStrings[currentLanguage].originalFont : uiStrings[currentLanguage].readableFont;
+        });
+
+        modalCloseButton.addEventListener('click', () => { modal.style.display = 'none'; });
+        modal.addEventListener('click', (e) => { if (e.target === modal) { modal.style.display = 'none'; } });
+
         mainContainer.addEventListener('click', async (e) => {
             const regenBtn = e.target.closest('.regenerate-image-btn');
             if (regenBtn) {
