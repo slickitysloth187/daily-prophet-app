@@ -6,27 +6,19 @@ exports.handler = async function(event) {
     }
 
     try {
-        const { lang, articles } = JSON.parse(event.body);
+        const { lang } = JSON.parse(event.body);
         const apiKey = process.env.GEMINI_API_KEY;
-        // FIX: Switched to the correct and available Gemini model
-        const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`;
+        const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent?key=${apiKey}`;
         
         const languageNames = { en: 'English', hu: 'Hungarian', de: 'German', es: 'Spanish', fr: 'French', it: 'Italian' };
         const languageName = languageNames[lang] || 'English';
 
-        let prompt;
-        if (articles) {
-            // Translation request
-            const textOnlyPayload = { mainArticle: articles[0], secondaryArticles: articles.slice(1) };
-            prompt = `Translate the following JSON object containing news articles into ${languageName}. Keep the exact JSON structure. Translate the 'headline', 'byline', and 'body' for each article. Original articles: ${JSON.stringify(textOnlyPayload)}`;
-        } else {
-            // Generation request
-            prompt = `Generate a full front page for the Daily Prophet newspaper in ${languageName}. Respond with ONLY a single valid JSON object. The JSON object must contain a 'mainArticle' (with 'headline', 'byline', and a full multi-paragraph 'body') and an array of two 'secondaryArticles' (each with 'headline', 'byline', and a one-paragraph 'body').`;
-        }
-
+        // FIX: Updated prompt to generate original, post-book content.
+        const prompt = `Generate a full front page for the Daily Prophet newspaper in ${languageName}. The events must take place several years after the main Harry Potter books (e.g., in the 2020s) and must be completely original, not retelling stories from the books or films. Respond with ONLY a single valid JSON object. The JSON object must contain a 'mainArticle' (with 'headline', 'byline', and a full multi-paragraph 'body') and an array of two 'secondaryArticles' (each with 'headline', 'byline', and a one-paragraph 'body').`;
+        
         const payload = {
             contents: [{ role: "user", parts: [{ text: prompt }] }],
-            generationConfig: { responseMimeType: "application/json", temperature: 0.75 }
+            generationConfig: { responseMimeType: "application/json", temperature: 0.8 }
         };
 
         const response = await fetch(apiUrl, {
@@ -43,8 +35,8 @@ exports.handler = async function(event) {
 
         const data = await response.json();
         
-        if (!data.candidates || data.candidates.length === 0) {
-            throw new Error("No candidates in Gemini response.");
+        if (!data.candidates || data.candidates.length === 0 || !data.candidates[0].content || !data.candidates[0].content.parts) {
+            throw new Error("Invalid response structure from Gemini API.");
         }
         
         const generatedText = data.candidates[0].content.parts[0].text;
