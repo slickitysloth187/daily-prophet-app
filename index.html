@@ -148,6 +148,8 @@
         const languageSelector = document.getElementById('language-selector');
         const horoscopeTitle = document.getElementById('horoscope-title');
         const horoscopeComingSoon = document.getElementById('horoscope-coming-soon');
+        
+        let masterEditionWithImages = null; 
         let currentEdition = {};
         let currentLanguage = 'en';
 
@@ -206,8 +208,8 @@
             showLoading(true, true);
             const editionJSON = await fetchFromNetlify('generate-edition', { lang: 'en' });
             
-            if (!editionJSON || editionJSON.error || !editionJSON.mainArticle) {
-                console.error("Failed to generate a valid master edition.");
+            if (!editionJSON || editionJSON.error || !editionJSON.mainArticle || !editionJSON.secondaryArticles) {
+                console.error("Failed to generate a valid master edition. API Response:", editionJSON);
                 return null;
             }
 
@@ -338,26 +340,29 @@
             localStorage.setItem('prophetLanguage', lang);
             updateUIText(lang);
 
-            const masterEdition = await getMasterEdition();
-            if (!masterEdition) {
-                 showLoading(false);
-                 featuredArticleContainer.innerHTML = `<p class="text-center text-red-500 p-8">Failed to fetch the master edition from the archives.</p>`;
+            if (!masterEditionWithImages) {
+                 console.log("Master edition with images not ready, re-initializing.");
+                 await initializePage();
                  return;
             }
             
-            const translatedArticles = await getTranslatedArticles(masterEdition.articles, currentLanguage);
-            const articlesWithImages = await hydrateEditionWithImages(translatedArticles, masterEdition.articles);
+            const translatedArticles = await getTranslatedArticles(masterEditionWithImages.articles, currentLanguage);
+            
+            const finalArticles = translatedArticles.map((article, index) => ({
+                ...article,
+                imageUrl: masterEditionWithImages.articles[index].imageUrl,
+                imageError: masterEditionWithImages.articles[index].imageError,
+            }));
             
             const finalEdition = {
-                articles: articlesWithImages,
-                publicationDate: masterEdition.publicationDate,
+                articles: finalArticles,
+                publicationDate: masterEditionWithImages.publicationDate,
             };
 
             populatePage(finalEdition);
             if(showLoader) showLoading(false);
         }
 
-        // --- MAIN INITIALIZATION FUNCTION ---
         async function initializePage() {
             currentLanguage = localStorage.getItem('prophetLanguage') || 'en';
             languageSelector.value = currentLanguage;
@@ -373,11 +378,17 @@
                 return;
             }
             
-            const translatedArticles = await getTranslatedArticles(masterEdition.articles, currentLanguage);
-            const articlesWithImages = await hydrateEditionWithImages(translatedArticles, masterEdition.articles);
+            masterEditionWithImages = await hydrateEditionWithImages(masterEdition.articles, masterEdition.articles);
+            const translatedArticles = await getTranslatedArticles(masterEditionWithImages.articles, currentLanguage);
+
+            const finalArticles = translatedArticles.map((article, index) => ({
+                ...article,
+                imageUrl: masterEditionWithImages.articles[index].imageUrl,
+                imageError: masterEditionWithImages.articles[index].imageError,
+            }));
 
             const finalEdition = {
-                articles: articlesWithImages,
+                articles: finalArticles,
                 publicationDate: masterEdition.publicationDate
             };
             
@@ -406,16 +417,17 @@
                 const container = regenBtn.closest('[data-article-index]');
                 const articleIndex = parseInt(container.dataset.articleIndex, 10);
                 
-                const masterEdition = await getMasterEdition();
-                if (!masterEdition || !masterEdition.articles[articleIndex]) return;
-                const masterArticle = masterEdition.articles[articleIndex];
+                const masterArticle = masterEditionWithImages.articles[articleIndex];
 
+                if (!masterArticle) return;
+                
                 regenBtn.textContent = uiStrings[currentLanguage].generating;
                 regenBtn.disabled = true;
 
                 const result = await fetchFromNetlify('generate-image', { headline: masterArticle.headline });
                 if (result && result.imageUrl) {
                     currentEdition.articles[articleIndex].imageUrl = result.imageUrl;
+                    masterEditionWithImages.articles[articleIndex].imageUrl = result.imageUrl; // Update master copy
                     container.innerHTML = `<img src="${result.imageUrl}" alt="${currentEdition.articles[articleIndex].headline}" class="article-image">`;
                 } else {
                     regenBtn.textContent = uiStrings[currentLanguage].regenerateImage;
