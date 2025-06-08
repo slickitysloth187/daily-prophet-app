@@ -1,0 +1,4 @@
+# Ez a fájl megmondja a Netlify-nak, hol találja a szerveroldali függvényeket.
+# Győződj meg róla, hogy ez a fájl a projekt gyökerében van.
+[build]
+  functions = "netlify/functions"
