@@ -1,6 +1,5 @@
 // netlify/functions/generate-edition.js
-// Ez a verzió sem igényel külső könyvtárakat.
-//
+
 exports.handler = async function(event) {
     if (event.httpMethod !== 'POST') {
         return { statusCode: 405, body: 'Method Not Allowed' };
@@ -9,18 +8,19 @@ exports.handler = async function(event) {
     try {
         const { lang, articles } = JSON.parse(event.body);
         const apiKey = process.env.GEMINI_API_KEY;
-        const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent?key=${apiKey}`;
+        // FIX: Switched to the correct and available Gemini model
+        const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`;
         
         const languageNames = { en: 'English', hu: 'Hungarian', de: 'German', es: 'Spanish', fr: 'French', it: 'Italian' };
         const languageName = languageNames[lang] || 'English';
 
         let prompt;
         if (articles) {
-            // Fordítási kérés
+            // Translation request
             const textOnlyPayload = { mainArticle: articles[0], secondaryArticles: articles.slice(1) };
             prompt = `Translate the following JSON object containing news articles into ${languageName}. Keep the exact JSON structure. Translate the 'headline', 'byline', and 'body' for each article. Original articles: ${JSON.stringify(textOnlyPayload)}`;
         } else {
-            // Generálási kérés
+            // Generation request
             prompt = `Generate a full front page for the Daily Prophet newspaper in ${languageName}. Respond with ONLY a single valid JSON object. The JSON object must contain a 'mainArticle' (with 'headline', 'byline', and a full multi-paragraph 'body') and an array of two 'secondaryArticles' (each with 'headline', 'byline', and a one-paragraph 'body').`;
         }
 
